@@ -27,7 +27,9 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
   const newConfig = req.body;
   try {
     await db.runTransaction(async (transaction) => {
-      const configRef = db.collection('configurations').doc('appConfig');
+      console.log(req.user)
+      const configRef = db.collection('configurations').doc(req.user.email);
+      
       const doc = await transaction.get(configRef);
       if (!doc.exists) {
         // Create new configuration with version 1 if it does not exist.

@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const admin = require('firebase-admin');
 
 router.post('/signin', async (req, res) => {
   const { email, password } = req.body;
@@ -29,6 +30,29 @@ router.post('/signin', async (req, res) => {
         : 'Authentication failed.';
     res.status(401).json({ error: errorMessage });
   }
+});
+
+router.post('/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+    });
+
+    return res.status(201).json({
+      message: 'User created successfully',
+      user: userRecord
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
 });
 
 module.exports = router;

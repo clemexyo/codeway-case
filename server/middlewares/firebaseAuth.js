@@ -5,7 +5,7 @@ async function verifyFirebaseToken(req, res, next) {
   if (!authHeader) return res.status(401).json({ error: 'No token provided.' });
   try {
     const decodedToken = await admin.auth().verifyIdToken(authHeader);
-    req.user = decodedToken; // Attach decoded token for further use if needed.
+    req.user = decodedToken;
     next();
   } catch (error) {
     res.status(401).json({ error: 'Unauthorized: Invalid token.' });
