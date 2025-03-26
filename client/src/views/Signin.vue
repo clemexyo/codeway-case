@@ -3,7 +3,7 @@
     <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#141728] to-[#1C2237] text-white">
       <!-- Logo -->
       <img
-        src="@/assets/logo.png"
+        src="../assets/logo.png"
         alt="Logo"
         class="w-24 h-24 mb-6"
       />
