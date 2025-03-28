@@ -18,6 +18,7 @@ export default {
     });
     const showEditModal = ref(false);
     const currentEditItem = ref(null);
+    const showAddForm = ref(false);
     const router = useRouter();
 
     const fetchConfig = async () => {
@@ -66,11 +67,10 @@ export default {
       }
     };
 
-    const deleteItem = async (index) => {
-      const itemToDelete = configData.value[index];
+    const deleteItem = async (key) => {
       try {
         await axios.delete(
-          `http://localhost:3000/api/config/${itemToDelete.key}`,
+          `http://localhost:3000/api/config/${key}`,
           {
             headers: {
               authorization: localStorage.getItem("idToken"),
@@ -94,10 +94,6 @@ export default {
         createDate: new Date().toLocaleString(),
       };
 
-      newParameter.value.key = '';
-      newParameter.value.value = '';
-      newParameter.value.description = '';
-
       try {
         await axios.post(
           'http://localhost:3000/api/config',
@@ -109,10 +105,21 @@ export default {
           }
         );
         console.log('New parameter added successfully.');
+        
+        // Reset form and hide it
+        newParameter.value.key = '';
+        newParameter.value.value = '';
+        newParameter.value.description = '';
+        showAddForm.value = false;
+        
         await fetchConfig();
       } catch (error) {
         console.error('Error updating config:', error);
       }
+    };
+
+    const toggleAddForm = () => {
+      showAddForm.value = !showAddForm.value;
     };
 
     return {
@@ -120,10 +127,12 @@ export default {
       newParameter,
       showEditModal,
       currentEditItem,
+      showAddForm,
       editItem,
       updateItem,
       deleteItem,
       addItem,
+      toggleAddForm,
     };
   },
 };
@@ -135,17 +144,61 @@ export default {
       <button class="w-8 h-8">
         <img src="../assets/logo.png" alt="User Icon" class="w-full h-full object-cover" />
       </button>
+      <button 
+        class="bg-green-600 px-3 py-1 rounded hover:bg-green-700 md:hidden"
+        @click="toggleAddForm"
+      >
+        {{ showAddForm ? 'Cancel' : 'Add New' }}
+      </button>
     </nav>
 
-    <div class="flex-1 px-6 py-8 mx-auto w-full max-w-screen-xl">
-      <div class="bg-[#1C2237] rounded-md p-4 w-full overflow-x-auto">
+    <div class="flex-1 px-4 py-6 mx-auto w-full max-w-screen-xl">
+      <!-- Mobile add form -->
+      <div v-if="showAddForm" class="md:hidden mb-6 bg-[#1C2237] rounded-md p-4 shadow-lg">
+        <h2 class="text-lg font-medium mb-4">Add New Parameter</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm mb-1">Parameter Key</label>
+            <input
+              v-model="newParameter.key"
+              class="w-full bg-[#232942] rounded px-3 py-2 outline-none"
+              placeholder="Enter key"
+            />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Value</label>
+            <input
+              v-model="newParameter.value"
+              class="w-full bg-[#232942] rounded px-3 py-2 outline-none"
+              placeholder="Enter value"
+            />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Description</label>
+            <input
+              v-model="newParameter.description"
+              class="w-full bg-[#232942] rounded px-3 py-2 outline-none"
+              placeholder="Enter description"
+            />
+          </div>
+          <button
+            class="w-full bg-green-600 py-2 rounded hover:bg-green-700"
+            @click="addItem"
+          >
+            Add Parameter
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop table view -->
+      <div class="hidden md:block bg-[#1C2237] rounded-md p-4 w-full overflow-x-auto">
         <table class="table-auto w-full text-left border-collapse">
           <thead>
             <tr class="border-b border-gray-600">
               <th class="px-4 py-2">Parameter Key</th>
               <th class="px-4 py-2">Value</th>
               <th class="px-4 py-2">Description</th>
-              <th class="px-4 py-2">Create Date !</th>
+              <th class="px-4 py-2">Create Date</th>
               <th class="px-4 py-2"></th>
             </tr>
           </thead>
@@ -165,7 +218,7 @@ export default {
                   <button class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700" @click="editItem(item)">
                     Edit
                   </button>
-                  <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700" @click="deleteItem(index)">
+                  <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700" @click="deleteItem(item.key)">
                     Delete
                   </button>
                 </div>
@@ -206,13 +259,53 @@ export default {
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile card view -->
+      <div class="md:hidden space-y-4">
+        <div 
+          v-for="(item, index) in configData" 
+          :key="index"
+          class="bg-[#1C2237] rounded-md p-4 shadow-lg"
+        >
+          <div class="mb-3">
+            <div class="font-medium text-gray-300">Parameter Key:</div>
+            <div>{{ item.key }}</div>
+          </div>
+          <div class="mb-3">
+            <div class="font-medium text-gray-300">Value:</div>
+            <div>{{ item.value }}</div>
+          </div>
+          <div class="mb-3">
+            <div class="font-medium text-gray-300">Description:</div>
+            <div>{{ item.description }}</div>
+          </div>
+          <div class="mb-4">
+            <div class="font-medium text-gray-300">Create Date:</div>
+            <div>{{ item.createDate }}</div>
+          </div>
+          <div class="flex justify-center space-x-4">
+            <button 
+              class="bg-blue-600 px-6 py-1.5 rounded hover:bg-blue-700 text-sm" 
+              @click="editItem(item)"
+            >
+              Edit
+            </button>
+            <button 
+              class="bg-red-600 px-6 py-1.5 rounded hover:bg-red-700 text-sm" 
+              @click="deleteItem(item.key)"
+            >
+              Del
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     
     <EditParameterModal 
       :show="showEditModal" 
       :parameter="currentEditItem" 
       @update="updateItem" 
-      @close="showEditModal = false" 
+      @close="showEditModal.value = false" 
     />
   </div>
 </template>
