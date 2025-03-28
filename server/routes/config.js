@@ -217,4 +217,59 @@ router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// DELETE /config/:key endpoint for authenticated panel users
+router.delete('/:key', verifyFirebaseToken, async (req, res) => {
+  const parameterKey = req.params.key;
+  
+  try {
+    // Reference to the user's configuration document
+    const configRef = db.collection('configurations').doc(req.user.email);
+    const configDoc = await configRef.get();
+    
+    if (!configDoc.exists) {
+      return res.status(404).json({ error: 'User configuration does not exist.' });
+    }
+    
+    // Reference to the parameter document in the parameters collection
+    const parameterDocRef = configRef.collection('parameters').doc(parameterKey);
+    const parameterDoc = await parameterDocRef.get();
+    
+    if (!parameterDoc.exists) {
+      return res.status(404).json({ error: 'Parameter not found.' });
+    }
+    
+    // Get all version documents in the versions subcollection for this parameter
+    const versionsSnapshot = await parameterDocRef.collection('versions').get();
+    if (versionsSnapshot.empty) {
+      return res.status(404).json({ error: 'No versions found for this parameter.' });
+    }
+    
+    // Find the highest version document
+    let highestVersionDoc = null;
+    let highestVersionNum = 0;
+    
+    versionsSnapshot.forEach(doc => {
+      const versionData = doc.data();
+      const versionNum = versionData.version || parseInt(doc.id) || 0;
+      if (versionNum > highestVersionNum) {
+        highestVersionNum = versionNum;
+        highestVersionDoc = doc;
+      }
+    });
+    
+    if (!highestVersionDoc) {
+      return res.status(404).json({ error: 'Could not determine the latest version for this parameter.' });
+    }
+    
+    // Update the highest version document to mark it as deleted
+    await highestVersionDoc.ref.update({ deleted: true });
+    
+    res.json({ message: `Parameter "${parameterKey}" marked as deleted.` });
+  } catch (error) {
+    console.error('Error deleting parameter:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 module.exports = router;
