@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const requestLogger = require('./middlewares/logger.middleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,20 +17,19 @@ if (!admin.apps.length) {
   });
 }
 
+// add middleware
 app.use(cors());
+app.use(requestLogger)
 app.use(express.json());
 
-const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
+// register routes
+const authRoutes = require('./routes/auth.route');
+app.use('/api/auth', authRoutes);
 
+const configRoutes = require('./routes/config.route');
+app.use('/api/config', configRoutes);
 
-const configRoutes = require('./routes/config');
-app.use('/config', configRoutes);
-
-app.get('/', (req, res) => {
-  res.send('Configuration Management API is running.');
-});
-
+// start the app
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

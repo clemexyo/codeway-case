@@ -17,7 +17,7 @@ export default {
       console.log(email.value)
       console.log(password.value)
       try {
-        const response = await axios.post('http://localhost:3000/auth/signin', {
+        const response = await axios.post('http://localhost:3000/api/auth/signin', {
           email: email.value,
           password: password.value,
         });

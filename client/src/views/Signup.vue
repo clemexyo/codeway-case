@@ -1,3 +1,54 @@
+<script>
+import { ref } from 'vue';
+import axios from 'axios'; 
+import { useRouter } from 'vue-router';
+
+export default {
+  name: 'Signup',
+  setup() {
+    const email = ref('');
+    const password = ref('');
+    const confirmPassword = ref('');
+    const error = ref('');
+    const router = useRouter();
+
+    const signUp = async () => {
+      // Basic example logic:
+      if (!email.value || !password.value || !confirmPassword.value) {
+        error.value = 'All fields are required.';
+        return;
+      }
+      if (password.value !== confirmPassword.value) {
+        error.value = 'Passwords do not match.';
+        return;
+      }
+
+      try {
+        const response = await axios.post('http://localhost:3000/api/auth/signup', {
+          email: email.value,
+          password: password.value,
+        });
+        console.log(response)
+        console.log('Sign up successful for:', email.value);
+        error.value = '';
+        router.push('/signin');
+      } catch (err) {
+        error.value = 'Sign up failed.';
+        console.log(err)
+      }
+    };
+
+    return {
+      email,
+      password,
+      confirmPassword,
+      error,
+      signUp,
+    };
+  },
+};
+</script>
+
 <template>
     <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#141728] to-[#1C2237] text-white">
       <img
@@ -55,55 +106,4 @@
       </div>
     </div>
   </template>
-  
-  <script>
-  import { ref } from 'vue';
-  import axios from 'axios'; 
-  import { useRouter } from 'vue-router';
-  
-  export default {
-    name: 'Signup',
-    setup() {
-      const email = ref('');
-      const password = ref('');
-      const confirmPassword = ref('');
-      const error = ref('');
-      const router = useRouter();
-  
-      const signUp = async () => {
-        // Basic example logic:
-        if (!email.value || !password.value || !confirmPassword.value) {
-          error.value = 'All fields are required.';
-          return;
-        }
-        if (password.value !== confirmPassword.value) {
-          error.value = 'Passwords do not match.';
-          return;
-        }
-  
-        try {
-          const response = await axios.post('http://localhost:3000/auth/signup', {
-            email: email.value,
-            password: password.value,
-          });
-          console.log(response)
-          console.log('Sign up successful for:', email.value);
-          error.value = '';
-          router.push('/signin');
-        } catch (err) {
-          error.value = 'Sign up failed.';
-          console.log(err)
-        }
-      };
-  
-      return {
-        email,
-        password,
-        confirmPassword,
-        error,
-        signUp,
-      };
-    },
-  };
-  </script>
   

@@ -1,3 +1,134 @@
+<script>
+import axios from 'axios';
+import { ref, onMounted } from 'vue';
+import EditParameterModal from '../components/EditParameterModal.vue';
+import { useRouter } from 'vue-router';
+
+export default {
+  name: 'Home',
+  components: {
+    EditParameterModal
+  },
+  setup() {
+    const configData = ref([]);
+    const newParameter = ref({
+      key: '',
+      value: '',
+      description: '',
+    });
+    const showEditModal = ref(false);
+    const currentEditItem = ref(null);
+    const router = useRouter();
+
+    const fetchConfig = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/api/config', {
+          headers: {
+            authorization: localStorage.getItem("idToken"),
+          },
+        });
+        console.log('Config fetch:', res);
+        configData.value = res.data.parameters;
+      } catch (error) {
+        console.error('Error fetching config:', error);
+        router.push("/signin")
+      }
+    };
+
+    onMounted(fetchConfig);
+
+    const editItem = (item) => {
+      currentEditItem.value = { ...item };
+      showEditModal.value = true;
+    };
+
+    const updateItem = async (updatedItem) => {
+      try {
+        const payload = {
+          key: updatedItem.key,
+          value: updatedItem.value,
+          description: updatedItem.description,
+        };
+
+        await axios.put(
+          `http://localhost:3000/api/config/${updatedItem.key}`,
+          payload,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('Parameter updated successfully.');
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error updating parameter:', error);
+      }
+    };
+
+    const deleteItem = async (index) => {
+      const itemToDelete = configData.value[index];
+      try {
+        await axios.delete(
+          `http://localhost:3000/api/config/${itemToDelete.key}`,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('Parameter deleted successfully.');
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error deleting parameter:', error);
+      }
+    };
+
+    const addItem = async () => {
+      if (!newParameter.value.key) return;
+
+      const payload = {
+        key: newParameter.value.key,
+        value: newParameter.value.value,
+        description: newParameter.value.description,
+        createDate: new Date().toLocaleString(),
+      };
+
+      newParameter.value.key = '';
+      newParameter.value.value = '';
+      newParameter.value.description = '';
+
+      try {
+        await axios.post(
+          'http://localhost:3000/api/config',
+          payload,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('New parameter added successfully.');
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error updating config:', error);
+      }
+    };
+
+    return {
+      configData,
+      newParameter,
+      showEditModal,
+      currentEditItem,
+      editItem,
+      updateItem,
+      deleteItem,
+      addItem,
+    };
+  },
+};
+</script>
+
 <template>
   <div class="bg-[#141728] min-h-screen text-white flex flex-col">
     <nav class="flex items-center justify-between px-8 py-4 bg-[#1F2335]">
@@ -85,134 +216,3 @@
     />
   </div>
 </template>
-
-<script>
-import axios from 'axios';
-import { ref, onMounted } from 'vue';
-import EditParameterModal from '../components/EditParameterModal.vue';
-import { useRouter } from 'vue-router';
-
-export default {
-  name: 'Home',
-  components: {
-    EditParameterModal
-  },
-  setup() {
-    const configData = ref([]);
-    const newParameter = ref({
-      key: '',
-      value: '',
-      description: '',
-    });
-    const showEditModal = ref(false);
-    const currentEditItem = ref(null);
-    const router = useRouter();
-
-    const fetchConfig = async () => {
-      try {
-        const res = await axios.get('http://localhost:3000/config', {
-          headers: {
-            authorization: localStorage.getItem("idToken"),
-          },
-        });
-        console.log('Config fetch:', res);
-        configData.value = res.data.parameters;
-      } catch (error) {
-        console.error('Error fetching config:', error);
-        router.push("/signin")
-      }
-    };
-
-    onMounted(fetchConfig);
-
-    const editItem = (item) => {
-      currentEditItem.value = { ...item };
-      showEditModal.value = true;
-    };
-
-    const updateItem = async (updatedItem) => {
-      try {
-        const payload = {
-          key: updatedItem.key,
-          value: updatedItem.value,
-          description: updatedItem.description,
-        };
-
-        await axios.put(
-          `http://localhost:3000/config/${updatedItem.key}`,
-          payload,
-          {
-            headers: {
-              authorization: localStorage.getItem("idToken"),
-            },
-          }
-        );
-        console.log('Parameter updated successfully.');
-        await fetchConfig();
-      } catch (error) {
-        console.error('Error updating parameter:', error);
-      }
-    };
-
-    const deleteItem = async (index) => {
-      const itemToDelete = configData.value[index];
-      try {
-        await axios.delete(
-          `http://localhost:3000/config/${itemToDelete.key}`,
-          {
-            headers: {
-              authorization: localStorage.getItem("idToken"),
-            },
-          }
-        );
-        console.log('Parameter deleted successfully.');
-        await fetchConfig();
-      } catch (error) {
-        console.error('Error deleting parameter:', error);
-      }
-    };
-
-    const addItem = async () => {
-      if (!newParameter.value.key) return;
-
-      const payload = {
-        key: newParameter.value.key,
-        value: newParameter.value.value,
-        description: newParameter.value.description,
-        createDate: new Date().toLocaleString(),
-      };
-
-      newParameter.value.key = '';
-      newParameter.value.value = '';
-      newParameter.value.description = '';
-
-      try {
-        await axios.post(
-          'http://localhost:3000/config',
-          payload,
-          {
-            headers: {
-              authorization: localStorage.getItem("idToken"),
-            },
-          }
-        );
-        console.log('New parameter added successfully.');
-        await fetchConfig();
-      } catch (error) {
-        console.error('Error updating config:', error);
-      }
-    };
-
-    return {
-      configData,
-      newParameter,
-      showEditModal,
-      currentEditItem,
-      editItem,
-      updateItem,
-      deleteItem,
-      addItem,
-    };
-  },
-};
-</script>
