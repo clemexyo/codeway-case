@@ -179,55 +179,52 @@ exports.updateParameter = async (userEmail, parameterKey, updatedValues) => {
  * @param {string} parameterKey 
  */
 exports.deleteParameter = async (userEmail, parameterKey) => {
-  console.log(`Attempting to delete parameter ${parameterKey} for user ${userEmail}`);
-  
-  try {
-    const configRef = db.collection('configurations').doc(userEmail);
-    const configDoc = await configRef.get();
-    
-    if (!configDoc.exists) {
-      throw new Error('User configuration does not exist.');
-    }
-    
-    const parameterDocRef = configRef.collection('parameters').doc(parameterKey);
-    const parameterDoc = await parameterDocRef.get();
-    
-    if (!parameterDoc.exists) {
-      throw new Error('Parameter not found.');
-    }
-    
-    const versionsCollectionRef = parameterDocRef.collection('versions');
-    const versionsSnapshot = await versionsCollectionRef.get();
-    
-    if (versionsSnapshot.empty) {
-      throw new Error('No versions found for this parameter.');
-    }
-    
-    let highestVersionDoc = null;
-    let highestVersionNum = 0;
-    
-    versionsSnapshot.forEach(doc => {
-      const versionData = doc.data(); 
-      const versionNum = versionData.version || parseInt(doc.id) || 0;
-      if (versionNum > highestVersionNum) {
-        highestVersionNum = versionNum;
-        highestVersionDoc = doc;
+    try {
+      const configRef = db.collection('configurations').doc(userEmail);
+      const configSnapshot = await configRef.get();
+      
+      if (!configSnapshot.exists) {
+        throw new Error('User configuration does not exist.');
       }
-    });
-    
-    if (!highestVersionDoc) {
-      throw new Error('Could not determine the latest version for this parameter.');
+      
+      const parameterRef = configRef.collection('parameters').doc(parameterKey);
+      const parameterSnapshot = await parameterRef.get();
+      
+      if (!parameterSnapshot.exists) {
+        throw new Error('Parameter not found.');
+      }
+      
+      const versionsRef = parameterRef.collection('versions');
+      const versionsSnapshot = await versionsRef.get();
+      
+      if (versionsSnapshot.empty) {
+        throw new Error('No versions found for this parameter.');
+      }
+      
+      let highestVersionDoc = null;
+      let highestVersionNum = 0;
+      
+      versionsSnapshot.forEach(doc => {
+        const versionData = doc.data();
+        const versionNum = versionData.version || parseInt(doc.id) || 0;
+        if (versionNum > highestVersionNum) {
+          highestVersionNum = versionNum;
+          highestVersionDoc = doc;
+        }
+      });
+      
+      if (!highestVersionDoc) {
+        throw new Error('Could not determine the latest version for this parameter.');
+      }
+      
+      // update the its highest version as deleted and add "deleted: true" to the parameter itself
+      await db.runTransaction(async (transaction) => {
+        transaction.update(highestVersionDoc.ref, { deleted: true });
+        transaction.update(parameterRef, { deleted: true });
+      });
+      
+      return true;
+    } catch (error) {
+      throw error;
     }
-    
-    await db.runTransaction(async (transaction) => {
-      transaction.update(highestVersionDoc.ref, { deleted: true });
-      transaction.update(parameterDocRef, { deleted: true });
-    });
-    
-    console.log(`Successfully marked parameter ${parameterKey} as deleted`);
-    return true;
-  } catch (error) {
-    console.error(`Error deleting parameter ${parameterKey}:`, error);
-    throw error;
-  }
-};
+  };
