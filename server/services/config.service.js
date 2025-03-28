@@ -179,40 +179,55 @@ exports.updateParameter = async (userEmail, parameterKey, updatedValues) => {
  * @param {string} parameterKey 
  */
 exports.deleteParameter = async (userEmail, parameterKey) => {
-  const configRef = db.collection('configurations').doc(userEmail);
-  const configDoc = await configRef.get();
+  console.log(`Attempting to delete parameter ${parameterKey} for user ${userEmail}`);
   
-  if (!configDoc.exists) {
-    throw new Error('User configuration does not exist.');
-  }
-  
-  const parameterDocRef = configRef.collection('parameters').doc(parameterKey);
-  const parameterDoc = await parameterDocRef.get();
-  
-  if (!parameterDoc.exists) {
-    throw new Error('Parameter not found.');
-  }
-  
-  const versionsSnapshot = await parameterDocRef.collection('versions').get();
-  if (versionsSnapshot.empty) {
-    throw new Error('No versions found for this parameter.');
-  }
-  
-  let highestVersionDoc = null;
-  let highestVersionNum = 0;
-  
-  versionsSnapshot.forEach(doc => {
-    const versionData = doc.data();
-    const versionNum = versionData.version || parseInt(doc.id) || 0;
-    if (versionNum > highestVersionNum) {
-      highestVersionNum = versionNum;
-      highestVersionDoc = doc;
+  try {
+    const configRef = db.collection('configurations').doc(userEmail);
+    const configDoc = await configRef.get();
+    
+    if (!configDoc.exists) {
+      throw new Error('User configuration does not exist.');
     }
-  });
-  
-  if (!highestVersionDoc) {
-    throw new Error('Could not determine the latest version for this parameter.');
+    
+    const parameterDocRef = configRef.collection('parameters').doc(parameterKey);
+    const parameterDoc = await parameterDocRef.get();
+    
+    if (!parameterDoc.exists) {
+      throw new Error('Parameter not found.');
+    }
+    
+    const versionsCollectionRef = parameterDocRef.collection('versions');
+    const versionsSnapshot = await versionsCollectionRef.get();
+    
+    if (versionsSnapshot.empty) {
+      throw new Error('No versions found for this parameter.');
+    }
+    
+    let highestVersionDoc = null;
+    let highestVersionNum = 0;
+    
+    versionsSnapshot.forEach(doc => {
+      const versionData = doc.data(); 
+      const versionNum = versionData.version || parseInt(doc.id) || 0;
+      if (versionNum > highestVersionNum) {
+        highestVersionNum = versionNum;
+        highestVersionDoc = doc;
+      }
+    });
+    
+    if (!highestVersionDoc) {
+      throw new Error('Could not determine the latest version for this parameter.');
+    }
+    
+    await db.runTransaction(async (transaction) => {
+      transaction.update(highestVersionDoc.ref, { deleted: true });
+      transaction.update(parameterDocRef, { deleted: true });
+    });
+    
+    console.log(`Successfully marked parameter ${parameterKey} as deleted`);
+    return true;
+  } catch (error) {
+    console.error(`Error deleting parameter ${parameterKey}:`, error);
+    throw error;
   }
-  
-  await highestVersionDoc.ref.update({ deleted: true });
 };

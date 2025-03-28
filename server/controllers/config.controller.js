@@ -53,7 +53,7 @@ exports.updateParameter = async (req, res) => {
 exports.deleteParameter = async (req, res) => {
   try {
     const userEmail = req.user.email;
-    const parameterKey = req.params.key;
+    const parameterKey = req.params.parameterKey;
     
     await configService.deleteParameter(userEmail, parameterKey);
     res.json({ message: `Parameter "${parameterKey}" marked as deleted.` });

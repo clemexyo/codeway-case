@@ -63,8 +63,16 @@ export default {
             },
           }
         );
+        
+        const index = configData.value.findIndex(item => item.key === updatedItem.key);
+        if (index !== -1) {
+          configData.value[index] = {
+            ...configData.value[index],
+            ...payload
+          };
+        }
+        
         console.log('Parameter updated successfully.');
-        await fetchConfig();
       } catch (error) {
         console.error('Error updating parameter:', error);
       }
@@ -72,32 +80,62 @@ export default {
 
     const deleteItem = async (key) => {
       try {
-        await axios.delete(
-          `http://localhost:3000/api/config/${key}`,
-          {
-            headers: {
-              authorization: localStorage.getItem("idToken"),
-            },
+        const indexToRemove = configData.value.findIndex(item => item.key === key);
+        if (indexToRemove !== -1) {
+          const removedItem = configData.value[indexToRemove];
+          
+          configData.value = configData.value.filter(item => item.key !== key);
+          
+          try {
+            await axios.delete(
+              `http://localhost:3000/api/config/${key}`,
+              {
+                headers: {
+                  authorization: localStorage.getItem("idToken"),
+                },
+              }
+            );
+            console.log('Parameter deleted successfully.');
+          } catch (error) {
+            // If API call fails, restore the item
+            console.error('Error deleting parameter:', error);
+            configData.value.splice(indexToRemove, 0, removedItem);
+            // TODO: show a pop-up here
           }
-        );
-        console.log('Parameter deleted successfully.');
-        await fetchConfig();
+        }
       } catch (error) {
-        console.error('Error deleting parameter:', error);
+        console.error('Error in delete operation:', error);
       }
     };
 
     const addItem = async () => {
       if (!newParameter.value.key) return;
 
+      const createDate = new Date().toLocaleString();
+      const newItem = {
+        key: newParameter.value.key,
+        value: newParameter.value.value,
+        description: newParameter.value.description,
+        createDate,
+        version: 1, 
+        timestamp: new Date().toISOString()
+      };
+
       const payload = {
         key: newParameter.value.key,
         value: newParameter.value.value,
         description: newParameter.value.description,
-        createDate: new Date().toLocaleString(),
+        createDate,
       };
 
       try {
+        configData.value = [...configData.value, newItem];
+        
+        newParameter.value.key = '';
+        newParameter.value.value = '';
+        newParameter.value.description = '';
+        showAddForm.value = false;
+
         await axios.post(
           'http://localhost:3000/api/config',
           payload,
@@ -107,16 +145,14 @@ export default {
             },
           }
         );
+        
         console.log('New parameter added successfully.');
-
-        newParameter.value.key = '';
-        newParameter.value.value = '';
-        newParameter.value.description = '';
-        showAddForm.value = false;
-
-        await fetchConfig();
       } catch (error) {
-        console.error('Error updating config:', error);
+        console.error('Error adding parameter:', error);
+        
+        // If API call fails, remove the item from the UI
+        configData.value = configData.value.filter(item => item.key !== newItem.key);
+        // TODO: sohw a pop-up here
       }
     };
 
