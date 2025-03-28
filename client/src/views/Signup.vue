@@ -1,6 +1,6 @@
 <script>
 import { ref } from 'vue';
-import axios from 'axios'; 
+import axios from "../axios"
 import { useRouter } from 'vue-router';
 
 export default {
@@ -24,7 +24,7 @@ export default {
       }
 
       try {
-        const response = await axios.post('http://localhost:3000/api/auth/signup', {
+        const response = await axios.post('/api/auth/signup', {
           email: email.value,
           password: password.value,
         });

@@ -1,5 +1,5 @@
 <script>
-import axios from 'axios';
+import axios from "../axios"
 import { ref, onMounted } from 'vue';
 import EditParameterModal from '../components/EditParameterModal.vue';
 import { useRouter } from 'vue-router';
@@ -25,7 +25,7 @@ export default {
     const fetchConfig = async () => {
       isLoading.value = true;
       try {
-        const res = await axios.get('http://localhost:3000/api/config', {
+        const res = await axios.get('/api/config', {
           headers: {
             authorization: localStorage.getItem("idToken"),
           },
@@ -55,7 +55,7 @@ export default {
         };
 
         await axios.put(
-          `http://localhost:3000/api/config/${updatedItem.key}`,
+          `/api/config/${updatedItem.key}`,
           payload,
           {
             headers: {
@@ -88,7 +88,7 @@ export default {
           
           try {
             await axios.delete(
-              `http://localhost:3000/api/config/${key}`,
+              `/api/config/${key}`,
               {
                 headers: {
                   authorization: localStorage.getItem("idToken"),
@@ -137,7 +137,7 @@ export default {
         showAddForm.value = false;
 
         await axios.post(
-          'http://localhost:3000/api/config',
+          '/api/config',
           payload,
           {
             headers: {
