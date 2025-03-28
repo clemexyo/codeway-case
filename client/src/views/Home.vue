@@ -1,19 +1,12 @@
 <template>
-  <!-- Full-page dark background -->
   <div class="bg-[#141728] min-h-screen text-white flex flex-col">
-    <!-- Top Navbar -->
     <nav class="flex items-center justify-between px-8 py-4 bg-[#1F2335]">
-      <!-- Logo -->
-      <img src="../assets/logo.png" alt="Logo" class="h-8" />
-      <!-- User Icon -->
       <button class="w-8 h-8">
         <img src="../assets/logo.png" alt="User Icon" class="w-full h-full object-cover" />
       </button>
     </nav>
 
-    <!-- Main Content Container -->
     <div class="flex-1 px-6 py-8 mx-auto w-full max-w-screen-xl">
-      <!-- Table Container -->
       <div class="bg-[#1C2237] rounded-md p-4 w-full overflow-x-auto">
         <table class="table-auto w-full text-left border-collapse">
           <thead>
@@ -47,7 +40,6 @@
                 </div>
               </td>
             </tr>
-            <!-- Row for adding a new parameter -->
             <tr>
               <td class="px-4 py-3">
                 <input
@@ -85,7 +77,6 @@
       </div>
     </div>
     
-    <!-- Edit Parameter Modal -->
     <EditParameterModal 
       :show="showEditModal" 
       :parameter="currentEditItem" 
@@ -117,7 +108,6 @@ export default {
     const currentEditItem = ref(null);
     const router = useRouter();
 
-    // Function to fetch config data from the backend using the GET method
     const fetchConfig = async () => {
       try {
         const res = await axios.get('http://localhost:3000/config', {
@@ -126,7 +116,6 @@ export default {
           },
         });
         console.log('Config fetch:', res);
-        // Directly use the parameters array returned from the backend
         configData.value = res.data.parameters;
       } catch (error) {
         console.error('Error fetching config:', error);
@@ -134,16 +123,13 @@ export default {
       }
     };
 
-    // Fetch configuration data from the backend on mount
     onMounted(fetchConfig);
 
-    // Open edit modal with the selected item
     const editItem = (item) => {
       currentEditItem.value = { ...item };
       showEditModal.value = true;
     };
 
-    // Update an existing parameter
     const updateItem = async (updatedItem) => {
       try {
         const payload = {
@@ -168,7 +154,6 @@ export default {
       }
     };
 
-    // Delete a parameter
     const deleteItem = async (index) => {
       const itemToDelete = configData.value[index];
       try {
@@ -187,7 +172,6 @@ export default {
       }
     };
 
-    // Add a new parameter row and send a POST request to the backend, then re-fetch the updated configuration.
     const addItem = async () => {
       if (!newParameter.value.key) return;
 
@@ -198,7 +182,6 @@ export default {
         createDate: new Date().toLocaleString(),
       };
 
-      // Clear the input fields immediately
       newParameter.value.key = '';
       newParameter.value.value = '';
       newParameter.value.description = '';

@@ -29,7 +29,6 @@ export default {
         error.value = 'Sign-in failed. Please check your credentials.';
         console.error("ERROR: " + err);
 
-        // ✅ Delay before resetting animation state
         setTimeout(() => {
           phase.value = 'initial';
         }, 1000); // 1 second delay so user sees the result
@@ -47,7 +46,7 @@ export default {
         phase.value = 'signin';
         setTimeout(() => {
           signIn();
-        }, 300); // wait for button to animate back up
+        }, 300); 
       }
     };
 
@@ -65,42 +64,34 @@ export default {
 <template>
   <div
     class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#141728] to-[#1C2237] text-white">
-    <!-- Logo -->
     <img src="../assets/logo.png" alt="Logo" class="w-24 h-24 mb-6" />
 
-    <!-- Form -->
     <div class="w-full max-w-sm px-8 py-6 bg-[#1F2335] rounded-md shadow-lg">
       <h1 class="text-center text-lg font-semibold mb-2">
         Please sign in
       </h1>
 
-      <!-- Error -->
       <p v-if="error" class="text-red-400 text-sm text-center mb-4">
         {{ error }}
       </p>
 
       <form @submit.prevent="handleClick">
-        <!-- Email -->
         <div class="mb-4">
           <input type="email" v-model="email" placeholder="e-mail address"
             class="w-full p-3 rounded border border-[#2D3143] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:border-[#8B50F9]" />
         </div>
 
-        <!-- Password -->
         <div class="mb-6">
           <input type="password" v-model="password" placeholder="Password"
             class="w-full p-3 rounded border border-[#2D3143] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:border-[#8B50F9]" />
         </div>
 
-        <!-- Animated Button -->
         <div class="relative h-24 overflow-hidden">
-          <!-- Retry Text -->
           <div v-if="phase === 'paused'"
             class="absolute w-full text-center text-purple-400 font-medium top-0 transition-opacity duration-300">
             Try that again
           </div>
 
-          <!-- Sign-in Button -->
           <button type="submit"
             class="absolute w-full py-3 rounded bg-gradient-to-r from-[#4D5DFF] to-[#2F4BFF] text-white font-semibold transition-transform duration-300"
             :class="{
@@ -113,7 +104,6 @@ export default {
       </form>
     </div>
 
-    <!-- Footer -->
     <div class="mt-4 text-sm text-gray-400">
       Codeway © 2021
     </div>

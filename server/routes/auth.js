@@ -16,14 +16,12 @@ router.post('/signin', async (req, res) => {
         returnSecureToken: true
       }
     );
-    // Return the token and other info from Firebase
     res.json(response.data);
     // res.cookie("accessToken", response.idToken);
     // res.cookie("refreshToken", response.refreshToken, {
     //         httpOnly: true,
     // });
   } catch (error) {
-    // Forward error message from Firebase, if available
     const errorMessage =
       error.response && error.response.data && error.response.data.error
         ? error.response.data.error.message

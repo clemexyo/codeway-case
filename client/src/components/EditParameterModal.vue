@@ -1,10 +1,8 @@
 <template>
     <Transition name="modal-slide">
       <div v-if="show" class="fixed inset-0 flex items-center justify-center z-50">
-        <!-- Overlay -->
         <div class="absolute inset-0 bg-black bg-opacity-50" @click="cancel"></div>
         
-        <!-- Modal card -->
         <div class="bg-[#1C2237] rounded-lg shadow-lg w-full max-w-md mx-4 z-10 transform modal-content">
           <div class="p-6">
             <h3 class="text-xl font-medium mb-4">Edit Parameter</h3>
@@ -65,21 +63,18 @@
     },
     emits: ['update', 'close'],
     setup(props, { emit }) {
-      // Create a local copy of the parameter data to edit
       const paramData = ref({
         value: '',
         description: '',
         createDate: ''
       });
-      
-      // Update local data when the parameter prop changes
+
       watch(() => props.parameter, (newParam) => {
         if (newParam) {
           paramData.value = { ...newParam };
         }
       }, { immediate: true });
       
-      // Functions
       const save = () => {
         emit('update', paramData.value);
         emit('close');

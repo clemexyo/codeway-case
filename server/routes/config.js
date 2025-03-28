@@ -1,18 +1,14 @@
-// server/routes/config.js
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 
-// Import Firebase token verification middleware
 const verifyFirebaseToken = require('../middlewares/firebaseAuth');
 
-// Access Firestore database
 const db = admin.firestore();
 
-// GET /config endpoint for authenticated panel users to retrieve all parameters
 router.get('/', verifyFirebaseToken, async (req, res) => {
   try {
-    // Reference to the user's configuration document
+
     const userEmail = req.user.email;
     console.log(`Retrieving parameters for user: ${userEmail}`);
     
@@ -24,22 +20,22 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
       return res.json({ parameters: [] });
     }
     
-    // Reference to the parameters collection
+    // reference to the parameters collection
     const parametersCollectionRef = configRef.collection('parameters');
     console.log(`Parameters collection path: ${parametersCollectionRef.path}`);
     
-    // Get all documents in the parameters collection
+    // get all documents in the parameters collection
     const parametersSnapshot = await parametersCollectionRef.get();
     console.log(`Parameters collection size: ${parametersSnapshot.size}`);
     
     const parameters = [];
     
-    // Process each parameter document
+    // process each parameter document
     for (const paramDoc of parametersSnapshot.docs) {
       const paramKey = paramDoc.id;
       console.log(`Processing parameter: ${paramKey}`);
       
-      // Get the versions subcollection
+      // get the versions subcollection
       const versionsCollectionRef = paramDoc.ref.collection('versions');
       const versionsSnapshot = await versionsCollectionRef.get();
       
@@ -48,7 +44,7 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
         continue;
       }
       
-      // Find the highest version number
+      // find the highest version number
       let highestVersionDoc = null;
       let highestVersionNum = 0;
       
@@ -66,13 +62,11 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
         const versionData = highestVersionDoc.data();
         console.log(`Highest version for ${paramKey}: ${highestVersionNum}`);
         
-        // Skip if the parameter is marked as deleted
         if (versionData.deleted === true) {
           console.log(`Skipping ${paramKey} because it's marked as deleted`);
           continue;
         }
         
-        // Add the parameter to the result
         parameters.push({
           key: paramKey,
           value: versionData.value,
@@ -84,9 +78,7 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
       }
     }
     
-    // Sort parameters by key for consistent ordering
     parameters.sort((a, b) => a.key.localeCompare(b.key));
-    console.log(`Returning ${parameters.length} parameters`);
     
     res.json({ parameters });
   } catch (error) {
@@ -95,37 +87,33 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// POST /config endpoint for authenticated panel users (using Firebase token middleware)
 router.post('/', verifyFirebaseToken, async (req, res) => {
   const newParameter = req.body; // Expecting { key, value, description, createDate }
   
   try {
     await db.runTransaction(async (transaction) => {
-      // Reference to the user's configuration document
       const configRef = db.collection('configurations').doc(req.user.email);
       const configDoc = await transaction.get(configRef);
       
       if (!configDoc.exists) {
-        // Create a new configuration document if it doesn't exist
+        // create a new configuration document if it doesn't exist
         transaction.set(configRef, { version: 1 });
       } else {
-        // Increment the version in the configuration document
         const currentData = configDoc.data();
         transaction.update(configRef, { 
           version: (currentData.version || 1) + 1 
         });
       }
       
-      // Reference to the parameters collection
       const parametersCollectionRef = configRef.collection('parameters');
       
-      // Reference to the document with the key name inside parameters collection
+      // reference to the document with the key name inside parameters collection
       const parameterDocRef = parametersCollectionRef.doc(newParameter.key);
       
-      // Create the versions subcollection under this parameter document
+      // create the versions subcollection under this parameter document
       const versionsCollectionRef = parameterDocRef.collection('versions');
       
-      // Find the current highest version in the versions subcollection
+      // find the current highest version in the versions subcollection
       const versionsQuery = await versionsCollectionRef.orderBy('version', 'desc').limit(1).get();
       let nextVersion = 1;
       
@@ -134,13 +122,13 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
         nextVersion = highestVersion + 1;
       }
 
-      // Set the parameter document with a "version" field so it exists in queries
+      // set the parameter document with a "version" field so it exists in queries
       transaction.set(parameterDocRef, { version: nextVersion }, { merge: true });
       
-      // Create a new version document in the versions subcollection
+      // create a new version document in the versions subcollection
       const versionDocRef = versionsCollectionRef.doc(nextVersion.toString());
       
-      // Set the data in the version document
+      // set the data in the version document
       transaction.set(versionDocRef, {
         key: newParameter.key,
         value: newParameter.value,
@@ -159,14 +147,12 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// PUT /config/:parameterKey endpoint for authenticated panel users
 router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
   const parameterKey = req.params.parameterKey;
   const updatedValues = req.body; // Expecting { value, description }
   
   try {
     await db.runTransaction(async (transaction) => {
-      // Reference to the user's configuration document
       const configRef = db.collection('configurations').doc(req.user.email);
       const configDoc = await transaction.get(configRef);
       
@@ -174,10 +160,8 @@ router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
         throw new Error("Configuration not found for user.");
       }
       
-      // Reference to the parameter document (which is just a collection reference)
       const parameterRef = configRef.collection('parameters').doc(parameterKey);
-      
-      // Find the current highest version in the versions subcollection
+
       const versionsRef = parameterRef.collection('versions');
       const versionsQuery = await versionsRef.orderBy('version', 'desc').limit(1).get();
       
@@ -185,15 +169,12 @@ router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
         throw new Error(`Parameter '${parameterKey}' not found.`);
       }
       
-      // Get the latest version data
       const latestVersionDoc = versionsQuery.docs[0];
       const latestVersionData = latestVersionDoc.data();
       const nextVersion = latestVersionData.version + 1;
       
-      // Create a new version document with the updated values
       const newVersionRef = versionsRef.doc(nextVersion.toString());
-      
-      // Copy all fields from the latest version, but update with new values
+
       transaction.set(newVersionRef, {
         key: parameterKey,
         value: updatedValues.value !== undefined ? updatedValues.value : latestVersionData.value,
@@ -204,7 +185,6 @@ router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
         deleted: false
       });
       
-      // Update the configuration document version
       transaction.update(configRef, { 
         version: admin.firestore.FieldValue.increment(1) 
       });
@@ -217,34 +197,28 @@ router.put('/:parameterKey', verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// DELETE /config/:key endpoint for authenticated panel users
 router.delete('/:key', verifyFirebaseToken, async (req, res) => {
   const parameterKey = req.params.key;
   
   try {
-    // Reference to the user's configuration document
     const configRef = db.collection('configurations').doc(req.user.email);
     const configDoc = await configRef.get();
     
     if (!configDoc.exists) {
       return res.status(404).json({ error: 'User configuration does not exist.' });
     }
-    
-    // Reference to the parameter document in the parameters collection
     const parameterDocRef = configRef.collection('parameters').doc(parameterKey);
     const parameterDoc = await parameterDocRef.get();
     
     if (!parameterDoc.exists) {
       return res.status(404).json({ error: 'Parameter not found.' });
     }
-    
-    // Get all version documents in the versions subcollection for this parameter
     const versionsSnapshot = await parameterDocRef.collection('versions').get();
     if (versionsSnapshot.empty) {
       return res.status(404).json({ error: 'No versions found for this parameter.' });
     }
     
-    // Find the highest version document
+    // find the highest version document
     let highestVersionDoc = null;
     let highestVersionNum = 0;
     
@@ -261,7 +235,6 @@ router.delete('/:key', verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ error: 'Could not determine the latest version for this parameter.' });
     }
     
-    // Update the highest version document to mark it as deleted
     await highestVersionDoc.ref.update({ deleted: true });
     
     res.json({ message: `Parameter "${parameterKey}" marked as deleted.` });
