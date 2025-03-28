@@ -38,7 +38,7 @@
               <td class="px-4 py-3">{{ item.createDate }}</td>
               <td class="px-4 py-3">
                 <div class="flex space-x-2">
-                  <button class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700" @click="editItem(index)">
+                  <button class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700" @click="editItem(item)">
                     Edit
                   </button>
                   <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700" @click="deleteItem(index)">
@@ -84,16 +84,28 @@
         </table>
       </div>
     </div>
+    
+    <!-- Edit Parameter Modal -->
+    <EditParameterModal 
+      :show="showEditModal" 
+      :parameter="currentEditItem" 
+      @update="updateItem" 
+      @close="showEditModal = false" 
+    />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { ref, onMounted } from 'vue';
+import EditParameterModal from '../components/EditParameterModal.vue';
 import { useRouter } from 'vue-router';
 
 export default {
   name: 'Home',
+  components: {
+    EditParameterModal
+  },
   setup() {
     const configData = ref([]);
     const newParameter = ref({
@@ -101,10 +113,11 @@ export default {
       value: '',
       description: '',
     });
-
+    const showEditModal = ref(false);
+    const currentEditItem = ref(null);
     const router = useRouter();
 
-    // Function to fetch config data from the backend using the new GET method
+    // Function to fetch config data from the backend using the GET method
     const fetchConfig = async () => {
       try {
         const res = await axios.get('http://localhost:3000/config', {
@@ -113,39 +126,71 @@ export default {
           },
         });
         console.log('Config fetch:', res);
-        // Map the returned object (with each parameter as its own object) to an array.
-        configData.value = Object.keys(res.data).map((key) => ({
-          key,
-          value: res.data[key].value,
-          description: res.data[key].description,
-          createDate: res.data[key].createDate,
-        }));
+        // Directly use the parameters array returned from the backend
+        configData.value = res.data.parameters;
       } catch (error) {
         console.error('Error fetching config:', error);
+        router.push("/signin")
       }
     };
 
     // Fetch configuration data from the backend on mount
     onMounted(fetchConfig);
 
-    // Placeholder edit function
-    const editItem = (index) => {
-      console.log('Edit item at index:', index);
-      // Implement your edit logic here
+    // Open edit modal with the selected item
+    const editItem = (item) => {
+      currentEditItem.value = { ...item };
+      showEditModal.value = true;
     };
 
-    // Placeholder delete function
-    const deleteItem = (index) => {
-      console.log('Delete item at index:', index);
-      // Implement your delete logic here
+    // Update an existing parameter
+    const updateItem = async (updatedItem) => {
+      try {
+        const payload = {
+          key: updatedItem.key,
+          value: updatedItem.value,
+          description: updatedItem.description,
+        };
+
+        await axios.put(
+          `http://localhost:3000/config/${updatedItem.key}`,
+          payload,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('Parameter updated successfully.');
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error updating parameter:', error);
+      }
     };
 
-    // Add a new parameter row and send a POST request to the backend,
-    // then re-fetch the updated configuration.
+    // Delete a parameter
+    const deleteItem = async (index) => {
+      const itemToDelete = configData.value[index];
+      try {
+        await axios.delete(
+          `http://localhost:3000/config/${itemToDelete.key}`,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('Parameter deleted successfully.');
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error deleting parameter:', error);
+      }
+    };
+
+    // Add a new parameter row and send a POST request to the backend, then re-fetch the updated configuration.
     const addItem = async () => {
       if (!newParameter.value.key) return;
 
-      // Prepare the payload using user input
       const payload = {
         key: newParameter.value.key,
         value: newParameter.value.value,
@@ -169,7 +214,6 @@ export default {
           }
         );
         console.log('New parameter added successfully.');
-        // Re-fetch updated config after successful POST
         await fetchConfig();
       } catch (error) {
         console.error('Error updating config:', error);
@@ -179,7 +223,10 @@ export default {
     return {
       configData,
       newParameter,
+      showEditModal,
+      currentEditItem,
       editItem,
+      updateItem,
       deleteItem,
       addItem,
     };
