@@ -28,17 +28,14 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard for authentication (will implement with Firebase later)
 router.beforeEach((to, from, next) => {
-  // This is a placeholder for the authentication check
-  // We'll implement this properly when we add Firebase authentication
-  const isAuthenticated = false // Will be replaced with actual auth check
-  
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-  } else {
-    next()
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('idToken');
+    if (!token) {
+      return next({ name: 'Signin' });
+    }
   }
-})
+  next();
+});
 
 export default router
