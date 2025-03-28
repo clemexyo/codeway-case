@@ -22,7 +22,6 @@ app.use(cors({ origin: 'https://codeway-case-frontend.onrender.com' }));
 app.use(requestLogger)
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // register routes
 const authRoutes = require('./routes/auth.route');
@@ -31,9 +30,6 @@ app.use('/api/auth', authRoutes);
 const configRoutes = require('./routes/config.route');
 app.use('/api/config', configRoutes);
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
 
 // start the app
 app.listen(port, () => {
