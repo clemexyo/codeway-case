@@ -8,7 +8,7 @@ router.post('/signin', async (req, res) => {
   try {
     const apiKey = process.env.FIREBASE_API_KEY;
     console.log('Using API key:', apiKey);
-    const response = await axios.post(
+        const response = await axios.post(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
       {
         email,

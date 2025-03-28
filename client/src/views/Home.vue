@@ -4,18 +4,10 @@
     <!-- Top Navbar -->
     <nav class="flex items-center justify-between px-8 py-4 bg-[#1F2335]">
       <!-- Logo -->
-      <img
-        src="../assets/logo.png"
-        alt="Logo"
-        class="h-8"
-      />
+      <img src="../assets/logo.png" alt="Logo" class="h-8" />
       <!-- User Icon -->
       <button class="w-8 h-8">
-        <img
-          src="../assets/logo.png"
-          alt="User Icon"
-          class="w-full h-full object-cover"
-        />
+        <img src="../assets/logo.png" alt="User Icon" class="w-full h-full object-cover" />
       </button>
     </nav>
 
@@ -46,16 +38,10 @@
               <td class="px-4 py-3">{{ item.createDate }}</td>
               <td class="px-4 py-3">
                 <div class="flex space-x-2">
-                  <button
-                    class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
-                    @click="editItem(index)"
-                  >
+                  <button class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700" @click="editItem(index)">
                     Edit
                   </button>
-                  <button
-                    class="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
-                    @click="deleteItem(index)"
-                  >
+                  <button class="bg-red-600 px-3 py-1 rounded hover:bg-red-700" @click="deleteItem(index)">
                     Delete
                   </button>
                 </div>
@@ -104,6 +90,7 @@
 <script>
 import axios from 'axios';
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default {
   name: 'Home',
@@ -115,51 +102,78 @@ export default {
       description: '',
     });
 
-    // Fetch configuration data from the backend on mount
-    onMounted(async () => {
+    const router = useRouter();
+
+    // Function to fetch config data from the backend using the new GET method
+    const fetchConfig = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/config');
-        // Convert the returned object into an array of objects for easier table rendering
+        const res = await axios.get('http://localhost:3000/config', {
+          headers: {
+            authorization: localStorage.getItem("idToken"),
+          },
+        });
+        console.log('Config fetch:', res);
+        // Map the returned object (with each parameter as its own object) to an array.
         configData.value = Object.keys(res.data).map((key) => ({
           key,
-          value: res.data[key],
-          description: 'No description', // placeholder
-          createDate: '01/01/2023 12:00', // placeholder
+          value: res.data[key].value,
+          description: res.data[key].description,
+          createDate: res.data[key].createDate,
         }));
       } catch (error) {
         console.error('Error fetching config:', error);
       }
-    });
+    };
+
+    // Fetch configuration data from the backend on mount
+    onMounted(fetchConfig);
 
     // Placeholder edit function
     const editItem = (index) => {
       console.log('Edit item at index:', index);
-      // Implement your edit logic here (e.g., open a modal, send a PATCH/PUT request, etc.)
+      // Implement your edit logic here
     };
 
     // Placeholder delete function
     const deleteItem = (index) => {
       console.log('Delete item at index:', index);
-      // Implement your delete logic here (e.g., send DELETE request to backend, remove from array, etc.)
+      // Implement your delete logic here
     };
 
-    // Add a new parameter row
-    const addItem = () => {
+    // Add a new parameter row and send a POST request to the backend,
+    // then re-fetch the updated configuration.
+    const addItem = async () => {
       if (!newParameter.value.key) return;
-      // Push the new parameter into the table
-      configData.value.push({
+
+      // Prepare the payload using user input
+      const payload = {
         key: newParameter.value.key,
         value: newParameter.value.value,
         description: newParameter.value.description,
-        createDate: new Date().toLocaleString(), // example
-      });
+        createDate: new Date().toLocaleString(),
+      };
 
-      // Clear input fields
+      // Clear the input fields immediately
       newParameter.value.key = '';
       newParameter.value.value = '';
       newParameter.value.description = '';
 
-      // Make a POST or PATCH request to update the config in the backend as needed
+      try {
+        await axios.post(
+          'http://localhost:3000/config',
+          payload,
+          {
+            headers: {
+              authorization: localStorage.getItem("idToken"),
+            },
+          }
+        );
+        console.log('New parameter added successfully.');
+        // Re-fetch updated config after successful POST
+        await fetchConfig();
+      } catch (error) {
+        console.error('Error updating config:', error);
+      }
     };
 
     return {

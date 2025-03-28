@@ -14,8 +14,10 @@ export default {
     const router = useRouter();
 
     const signIn = async () => {
+      console.log(email.value)
+      console.log(password.value)
       try {
-        const response = await axios.post('https://example.com/api/auth/signin', {
+        const response = await axios.post('http://localhost:3000/auth/signin', {
           email: email.value,
           password: password.value,
         });
@@ -25,7 +27,7 @@ export default {
         router.push('/home');
       } catch (err) {
         error.value = 'Sign-in failed. Please check your credentials.';
-        console.error(err);
+        console.error("ERROR: " + err);
 
         // ✅ Delay before resetting animation state
         setTimeout(() => {
