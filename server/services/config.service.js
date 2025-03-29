@@ -25,44 +25,32 @@ exports.getAllParameters = async (userEmail) => {
   
   // process each parameter document
   for (const paramDoc of parametersSnapshot.docs) {
+    if(paramDoc.data().deleted === true){
+      continue;
+    }
     const paramKey = paramDoc.id;
     console.log(`processing parameter: ${paramKey}`);
     
     const versionsCollectionRef = paramDoc.ref.collection('versions');
-    const versionsSnapshot = await versionsCollectionRef.get();
-    
+    const versionsSnapshot = await versionsCollectionRef
+      .orderBy('version', 'desc')
+      .limit(1)
+      .get();
     if (versionsSnapshot.empty) {
       console.log(`No versions found for parameter: ${paramKey}`);
       continue;
     }
     
-    // find the highest version number
-    let highestVersionDoc = null;
-    let highestVersionNum = 0;
-    
-    for (const versionDoc of versionsSnapshot.docs) {
-      const versionData = versionDoc.data();
-      const versionNum = versionData.version || parseInt(versionDoc.id) || 0;
-      
-      if (versionNum > highestVersionNum) {
-        highestVersionNum = versionNum;
-        highestVersionDoc = versionDoc;
-      }
-    }
-    
+    let highestVersionDoc = versionsSnapshot.docs[0];
     if (highestVersionDoc) {
       const versionData = highestVersionDoc.data();
-      
-      if (versionData.deleted === true) {
-        continue;
-      }
-      
+    
       parameters.push({
         key: paramKey,
         value: versionData.value,
         description: versionData.description,
         createDate: versionData.createDate,
-        version: versionData.version || highestVersionNum,
+        version: versionData.version,
         timestamp: versionData.timestamp
       });
     }
@@ -108,8 +96,9 @@ exports.createParameter = async (userEmail, newParameter) => {
       nextVersion = highestVersion + 1;
     }
 
-    // set the parameter document with a "version" field so it exists in queries
+    // set the parameter doc
     transaction.set(parameterDocRef, { version: nextVersion }, { merge: true });
+    transaction.set(parameterDocRef, { deleted: false }, { merge: true });
     
     // create a new version document in the versions subcollection
     const versionDocRef = versionsCollectionRef.doc(nextVersion.toString());
@@ -122,7 +111,6 @@ exports.createParameter = async (userEmail, newParameter) => {
       createDate: newParameter.createDate,
       version: nextVersion,
       timestamp: new Date().toISOString(),
-      deleted: false
     });
   });
 };
@@ -195,31 +183,20 @@ exports.deleteParameter = async (userEmail, parameterKey) => {
       }
       
       const versionsRef = parameterRef.collection('versions');
-      const versionsSnapshot = await versionsRef.get();
+      const versionsSnapshot = await versionsRef.orderBy('version', 'desc').limit(1).get();
       
       if (versionsSnapshot.empty) {
         throw new Error('No versions found for this parameter.');
       }
       
-      let highestVersionDoc = null;
-      let highestVersionNum = 0;
-      
-      versionsSnapshot.forEach(doc => {
-        const versionData = doc.data();
-        const versionNum = versionData.version || parseInt(doc.id) || 0;
-        if (versionNum > highestVersionNum) {
-          highestVersionNum = versionNum;
-          highestVersionDoc = doc;
-        }
-      });
+      let highestVersionDoc = versionsSnapshot.docs[0];
       
       if (!highestVersionDoc) {
         throw new Error('Could not determine the latest version for this parameter.');
       }
       
-      // update the its highest version as deleted and add "deleted: true" to the parameter itself
+      // update the parameter itself as deleted
       await db.runTransaction(async (transaction) => {
-        transaction.update(highestVersionDoc.ref, { deleted: true });
         transaction.update(parameterRef, { deleted: true });
       });
       
