@@ -6,17 +6,17 @@ const db = admin.firestore();
  * @param {string} userEmail 
  * @returns {Array}
  */
-exports.getAllParameters = async (userEmail) => {
-  const configRef = db.collection('configurations').doc(userEmail);
-  const configDoc = await configRef.get();
+exports.getAllParameters = async (userUID) => {
+  const userRef = db.collection('users').doc(userUID);
+  const userDoc = await userRef.get();
   
-  if (!configDoc.exists) {
+  if (!userDoc.exists) {
     console.log('configuration document does not exist for this user');
     return [];
   }
   
   // reference to the parameters collection
-  const parametersCollectionRef = configRef.collection('parameters');
+  const parametersCollectionRef = userRef.collection('parameters');
   
   // get all documents in the parameters collection
   const parametersSnapshot = await parametersCollectionRef.get();
@@ -34,14 +34,21 @@ exports.getAllParameters = async (userEmail) => {
     const versionsCollectionRef = paramDoc.ref.collection('versions');
     const versionsSnapshot = await versionsCollectionRef
       .orderBy('version', 'desc')
-      .limit(1)
+      .limit(2)
       .get();
     if (versionsSnapshot.empty) {
       console.log(`No versions found for parameter: ${paramKey}`);
       continue;
     }
     
-    let highestVersionDoc = versionsSnapshot.docs[0];
+    let highestVersionDoc = null;
+    if(versionsSnapshot.docs.length > 1 && userDoc.data().country != "default"){
+      highestVersionDoc = versionsSnapshot.docs[1];
+    }
+    else{
+      highestVersionDoc = versionsSnapshot.docs[0];
+    }
+    
     if (highestVersionDoc) {
       const versionData = highestVersionDoc.data();
     
@@ -61,25 +68,25 @@ exports.getAllParameters = async (userEmail) => {
 
 /**
  * create a new parameter
- * @param {string} userEmail 
+ * @param {string} userUID 
  * @param {Object} newParameter 
  */
-exports.createParameter = async (userEmail, newParameter) => {
+exports.createParameter = async (userUID, newParameter) => {
   await db.runTransaction(async (transaction) => {
-    const configRef = db.collection('configurations').doc(userEmail);
-    const configDoc = await transaction.get(configRef);
+    const userRef = db.collection('users').doc(userUID);
+    const userDoc = await transaction.get(userRef);
     
-    if (!configDoc.exists) {
+    if (!userDoc.exists) {
       // Create a new configuration document if it doesn't exist
-      transaction.set(configRef, { version: 1 });
+      transaction.set(userRef, { version: 1 });
     } else {
-      const currentData = configDoc.data();
-      transaction.update(configRef, { 
+      const currentData = userDoc.data();
+      transaction.update(userRef, { 
         version: (currentData.version || 1) + 1 
       });
     }
     
-    const parametersCollectionRef = configRef.collection('parameters');
+    const parametersCollectionRef = userRef.collection('parameters');
     
     // reference to the document with the key name inside parameters collection
     const parameterDocRef = parametersCollectionRef.doc(newParameter.key);
@@ -121,16 +128,16 @@ exports.createParameter = async (userEmail, newParameter) => {
  * @param {string} parameterKey 
  * @param {Object} updatedValues
  */
-exports.updateParameter = async (userEmail, parameterKey, updatedValues) => {
+exports.updateParameter = async (userUID, parameterKey, updatedValues) => {
   await db.runTransaction(async (transaction) => {
-    const configRef = db.collection('configurations').doc(userEmail);
-    const configDoc = await transaction.get(configRef);
+    const userRef = db.collection('users').doc(userUID);
+    const userDoc = await transaction.get(userRef);
     
-    if (!configDoc.exists) {
+    if (!userDoc.exists) {
       throw new Error("Configuration not found for user.");
     }
     
-    const parameterRef = configRef.collection('parameters').doc(parameterKey);
+    const parameterRef = userRef.collection('parameters').doc(parameterKey);
 
     const versionsRef = parameterRef.collection('versions');
     const versionsQuery = await versionsRef.orderBy('version', 'desc').limit(1).get();
@@ -155,7 +162,7 @@ exports.updateParameter = async (userEmail, parameterKey, updatedValues) => {
       deleted: false
     });
     
-    transaction.update(configRef, { 
+    transaction.update(userRef, { 
       version: admin.firestore.FieldValue.increment(1) 
     });
   });
@@ -163,19 +170,19 @@ exports.updateParameter = async (userEmail, parameterKey, updatedValues) => {
 
 /**
  * Delete (mark as deleted) a parameter
- * @param {string} userEmail
+ * @param {string} userUID
  * @param {string} parameterKey 
  */
-exports.deleteParameter = async (userEmail, parameterKey) => {
+exports.deleteParameter = async (userUID, parameterKey) => {
     try {
-      const configRef = db.collection('configurations').doc(userEmail);
-      const configSnapshot = await configRef.get();
+      const userRef = db.collection('users').doc(userUID);
+      const configSnapshot = await userRef.get();
       
       if (!configSnapshot.exists) {
         throw new Error('User configuration does not exist.');
       }
       
-      const parameterRef = configRef.collection('parameters').doc(parameterKey);
+      const parameterRef = userRef.collection('parameters').doc(parameterKey);
       const parameterSnapshot = await parameterRef.get();
       
       if (!parameterSnapshot.exists) {

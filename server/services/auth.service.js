@@ -1,5 +1,6 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
+const db = admin.firestore();
 
 /**
  * Sign in user with email and password via Firebase REST API
@@ -27,12 +28,19 @@ exports.signInWithEmailAndPassword = async (email, password) => {
  * Create a new user in Firebase Authentication
  * @param {string} email 
  * @param {string} password 
+ * @param {string} country 
  * @returns {Object} 
  */
-exports.createUser = async (email, password) => {
+exports.createUser = async (email, password, country) => {
   const userRecord = await admin.auth().createUser({
     email,
     password,
+  });
+
+  console.log(country)
+  await db.collection('users').doc(userRecord.uid).set({
+    email,
+    country
   });
   
   return userRecord;

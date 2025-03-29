@@ -9,6 +9,7 @@ export default {
     const email = ref('');
     const password = ref('');
     const confirmPassword = ref('');
+    const country = ref('')
     const error = ref('');
     const router = useRouter();
 
@@ -27,6 +28,7 @@ export default {
         const response = await axios.post('/api/auth/signup', {
           email: email.value,
           password: password.value,
+          country: country.value
         });
         console.log(response)
         console.log('Sign up successful for:', email.value);
@@ -42,6 +44,7 @@ export default {
       email,
       password,
       confirmPassword,
+      country,
       error,
       signUp,
     };
@@ -89,6 +92,15 @@ export default {
               class="w-full p-3 rounded border border-[#2D3143] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:border-[#8B50F9]"
             />
           </div>
+
+          <div class="mb-6">
+            <input
+              type="text"
+              v-model="country"
+              placeholder="Country"
+              class="w-full p-3 rounded border border-[#2D3143] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:border-[#8B50F9]"
+            />
+          </div>
           
           <button
             type="submit"
@@ -102,7 +114,7 @@ export default {
       </div>
   
       <div class="mt-4 text-sm text-gray-400">
-        Codeway © 2021
+        Codeway © 2025
       </div>
     </div>
   </template>
