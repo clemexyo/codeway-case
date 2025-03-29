@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const requestLogger = require('./middlewares/logger.middleware');
+const verifyFirebaseToken = require('./middlewares/firebaseAuth.middleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,7 +29,7 @@ const authRoutes = require('./routes/auth.route');
 app.use('/api/auth', authRoutes);
 
 const configRoutes = require('./routes/config.route');
-app.use('/api/config', configRoutes);
+app.use('/api/config', verifyFirebaseToken, configRoutes);
 
 
 // start the app

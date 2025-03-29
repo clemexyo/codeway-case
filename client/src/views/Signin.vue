@@ -46,16 +46,21 @@ export default {
         phase.value = 'signin';
         setTimeout(() => {
           signIn();
-        }, 300); 
+        }, 300);
       }
     };
+
+    const handleSignupClick = () => {
+      router.push("/signup")
+    }
 
     return {
       email,
       password,
       error,
       phase,
-      handleClick
+      handleClick,
+      handleSignupClick
     };
   }
 };
@@ -86,10 +91,10 @@ export default {
             class="w-full p-3 rounded border border-[#2D3143] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:border-[#8B50F9]" />
         </div>
 
-        <div class="relative h-24 overflow-hidden">
+        <div class="relative h-24 overflow-hidden mb-6">
           <div v-if="phase === 'paused'"
             class="absolute w-full text-center text-purple-400 font-medium top-0 transition-opacity duration-300">
-            Try that again
+            just a joke
           </div>
 
           <button type="submit"
@@ -101,11 +106,18 @@ export default {
             Sign in
           </button>
         </div>
+
+        <div class="mt-4">
+          <button type="button" @click="handleSignupClick"
+            class="w-full py-3 rounded bg-gradient-to-r from-[#4D5DFF] to-[#2F4BFF] text-white font-semibold text-center">
+            or signup ?
+          </button>
+        </div>
       </form>
     </div>
 
-    <div class="mt-4 text-sm text-gray-400">
-      Codeway © 2021
+    <div class="text-sm text-gray-400 text-center mt-6">
+      Codeway © 2025
     </div>
   </div>
 </template>

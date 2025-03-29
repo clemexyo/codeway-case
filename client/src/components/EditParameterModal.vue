@@ -1,7 +1,7 @@
 <template>
     <Transition name="modal-slide">
       <div v-if="show" class="fixed inset-0 flex items-center justify-center z-50">
-        <div class="absolute inset-0 bg-black bg-opacity-50" @click="cancel"></div>
+        <div class="absolute inset-0 bg-[#2A3047] bg-opacity-30" @click="cancel"></div>
         
         <div class="bg-[#1C2237] rounded-lg shadow-lg w-full max-w-md mx-4 z-10 transform modal-content">
           <div class="p-6">
