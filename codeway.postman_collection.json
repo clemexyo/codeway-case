@@ -1,0 +1,318 @@
+{
+	"info": {
+		"_postman_id": "1c1772d6-1407-49a6-ac55-6dd43e833a60",
+		"name": "codeway",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23859815"
+	},
+	"item": [
+		{
+			"name": "get config",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "authorization",
+						"value": "{{idToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/config",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "custom signin",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check if the response status is 200 (OK)\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Parse the JSON response body\r",
+							"var jsonData = pm.response.json();\r",
+							"\r",
+							"// Check that idToken is present in the response\r",
+							"pm.test(\"Response has an idToken\", function () {\r",
+							"    pm.expect(jsonData).to.have.property(\"idToken\");\r",
+							"});\r",
+							"\r",
+							"// Set the idToken as an environment variable\r",
+							"if (jsonData.idToken) {\r",
+							"    pm.environment.set(\"idToken\", jsonData.idToken);\r",
+							"    console.log(\"idToken set as environment variable: \" + jsonData.idToken);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"cihan.nesvat10@gmail.com\",\r\n    \"password\": \"12345678\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/auth/signin",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"auth",
+						"signin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "custom signup",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var template = `\r",
+							"<style type=\"text/css\">\r",
+							"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}\r",
+							"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}\r",
+							"    .tftable tr {background-color:#ffffff;}\r",
+							"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}\r",
+							"    .tftable tr:hover {background-color:#e0ffff;}\r",
+							"</style>\r",
+							"\r",
+							"<table class=\"tftable\" border=\"1\">\r",
+							"    <tr>\r",
+							"        <th>UID</th>\r",
+							"        <th>Email</th>\r",
+							"        <th>Email Verified</th>\r",
+							"        <th>Disabled</th>\r",
+							"        <th>Last Sign-In Time</th>\r",
+							"        <th>Creation Time</th>\r",
+							"        <th>Last Refresh Time</th>\r",
+							"        <th>Tokens Valid After Time</th>\r",
+							"        <th>Provider UID</th>\r",
+							"        <th>Provider Email</th>\r",
+							"        <th>Provider ID</th>\r",
+							"    </tr>\r",
+							"    <tr>\r",
+							"        <td>{{response.user.uid}}</td>\r",
+							"        <td>{{response.user.email}}</td>\r",
+							"        <td>{{response.user.emailVerified}}</td>\r",
+							"        <td>{{response.user.disabled}}</td>\r",
+							"        <td>{{response.user.metadata.lastSignInTime}}</td>\r",
+							"        <td>{{response.user.metadata.creationTime}}</td>\r",
+							"        <td>{{response.user.metadata.lastRefreshTime}}</td>\r",
+							"        <td>{{response.user.tokensValidAfterTime}}</td>\r",
+							"        <td>{{response.user.providerData.0.uid}}</td>\r",
+							"        <td>{{response.user.providerData.0.email}}</td>\r",
+							"        <td>{{response.user.providerData.0.providerId}}</td>\r",
+							"    </tr>\r",
+							"</table>\r",
+							"`;\r",
+							"\r",
+							"function constructVisualizerPayload() {\r",
+							"    return { response: pm.response.json() };\r",
+							"}\r",
+							"\r",
+							"pm.visualizer.set(template, constructVisualizerPayload());"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"cihan.nesvat10@gmail.com\",\r\n    \"password\": \"12345678\",\r\n    \"country\": \"default\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/auth/signup",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"auth",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "post config",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{idToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"key\": \"test2\",\r\n    \"value\": \"support@codeway.co\",\r\n    \"description\": \"NEW\",\r\n    \"createDate\": \"NEW\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/config",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"config"
+					],
+					"query": [
+						{
+							"key": "authorization",
+							"value": "{{idToken}}",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update config",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{idToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"key\": \"test2\",\r\n    \"value\": \"support@codeway.co\",\r\n    \"description\": \"NEW2\",\r\n    \"createDate\": \"NEW2\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/config/test2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"config",
+						"test2"
+					],
+					"query": [
+						{
+							"key": "authorization",
+							"value": "{{idToken}}",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete config",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{idToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/config/test2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"config",
+						"test2"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

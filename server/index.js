@@ -19,7 +19,13 @@ if (!admin.apps.length) {
 }
 
 // add middleware
-app.use(cors({ origin: 'https://codeway-case-frontend.onrender.com' }));
+app.use(cors({ 
+  origin: [
+    'https://codeway-case-frontend.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ]
+}));
 app.use(requestLogger)
 app.use(express.json());
 
